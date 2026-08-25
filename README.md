@@ -72,11 +72,12 @@ each using its version's standard loader:
 
 - **1710 → [UniMixins](https://github.com/LegacyModdingMC/UniMixins)**
   (`io.github.legacymoddingmc:unimixins`). 1.7.10 has **no** automatic
-  `mixins.*.json` discovery, so a coremod (`core/RetroForgeCore`, implementing
-  gtnhmixins' `IEarlyMixinLoader`) registers the config and hands the loader the
-  mixin list from the `core/Mixins` builder. The coremod is loaded in **dev** via
-  `-Dfml.coreMods.load=…` (build.gradle) and in **production** via the
-  `FMLCorePlugin` jar manifest attribute.
+  `mixins.*.json` discovery, so a small coremod (`core/RetroForgeCore`,
+  implementing gtnhmixins' `IEarlyMixinLoader`) registers the config by name. The
+  mixins themselves are just listed in the json's `client` / `server` / `mixins`
+  arrays. The coremod is discovered automatically — RetroFuturaGradle's launcher
+  finds it in **dev**, and FML reads the `FMLCorePlugin` jar manifest in
+  **production** (no `-Dfml.coreMods.load` needed).
 - **1122 → [MixinBooter](https://github.com/CleanroomMC/MixinBooter)**
   (`zone.rong:mixinbooter`). The config is declared through the jar manifest
   attribute `MixinConfigs`.
@@ -86,14 +87,10 @@ reobfuscation for both.
 
 Each module ships a sample `mixin/MixinMinecraft.java` that logs a line from the
 `Minecraft` constructor — run a client and look for `MixinMinecraft applied on ...`
-to confirm mixins load. To add your own:
-
-- **1122:** put the mixin under `mc1122/.../mixin/` and list its simple name in
-  the `client` / `server` / `mixins` arrays of `mixins.retroforge.json`.
-- **1710:** put the mixin under `mc1710/.../mixin/`, then add it to a `Mixins`
-  builder entry (`addClientMixins` / `addServerMixins` / `addCommonMixins`). The
-  `client` / `server` / `mixins` arrays in the json stay empty — the builder is
-  authoritative.
+to confirm mixins load. To add your own, in **either** module: put the mixin
+class under `<module>/.../mixin/` and list its simple name in the `client` /
+`server` / `mixins` arrays of `mixins.retroforge.json`. (On 1710 the coremod
+already registers the config, so nothing else is needed.)
 
 The config filename, its `refmap` field, the 1710 `FMLCorePlugin` / 1122
 `MixinConfigs` manifest values are all derived from `mod_id`. If you change

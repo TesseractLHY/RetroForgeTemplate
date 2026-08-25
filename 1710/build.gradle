@@ -5,7 +5,7 @@ plugins {
 def modId = project.findProperty('mod_id') ?: 'retroforge'
 def mixinRefMap = "mixins.${modId}.refmap.json"
 // Coremod that registers the mixin config (see RetroForgeCore).
-def coremodClass = 'com.example.retroforge.mc1710.core.RetroForgeCore'
+def coremodClass = 'com.example.retroforge.mc1710.RetroForgeCore'
 
 base {
     archivesName = "${modId}-mc1.7.10"

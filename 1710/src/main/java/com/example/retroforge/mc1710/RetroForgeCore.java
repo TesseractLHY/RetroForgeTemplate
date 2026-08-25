@@ -1,11 +1,11 @@
-package com.example.retroforge.mc1710.core;
+package com.example.retroforge.mc1710;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import com.gtnewhorizon.gtnhmixins.IEarlyMixinLoader;
-import com.gtnewhorizon.gtnhmixins.builders.IMixins;
 
 import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
 
@@ -14,15 +14,14 @@ import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
  *
  * <p>On 1.7.10 a mixin config is not discovered from a bare {@code mixins.*.json}
  * on the classpath — a coremod implementing {@link IEarlyMixinLoader} (from
- * gtnhmixins, bundled in UniMixins) must hand the config name and mixin list to
- * the loader. See {@link Mixins} for the actual list.</p>
+ * gtnhmixins, bundled in UniMixins) must name the config. The mixins themselves
+ * are listed in {@code mixins.retroforge.json} ({@code client}/{@code server}/
+ * {@code mixins} arrays), so {@link #getMixins} returns an empty list.</p>
  *
- * <p>This coremod is loaded:</p>
- * <ul>
- *   <li><b>dev</b> — via the {@code -Dfml.coreMods.load=...} JVM arg in build.gradle,
- *       because the jar manifest is not on the runClient classpath;</li>
- *   <li><b>production</b> — via the {@code FMLCorePlugin} jar manifest attribute.</li>
- * </ul>
+ * <p>The coremod is discovered automatically — no {@code -Dfml.coreMods.load}
+ * is needed: in <b>dev</b> RetroFuturaGradle's launcher picks up the coremod
+ * from the classpath, and in <b>production</b> FML reads the {@code FMLCorePlugin}
+ * jar manifest attribute.</p>
  */
 @IFMLLoadingPlugin.MCVersion("1.7.10")
 public final class RetroForgeCore implements IFMLLoadingPlugin, IEarlyMixinLoader {
@@ -34,7 +33,7 @@ public final class RetroForgeCore implements IFMLLoadingPlugin, IEarlyMixinLoade
 
     @Override
     public List<String> getMixins(Set<String> loadedCoreMods) {
-        return IMixins.getEarlyMixins(Mixins.class, loadedCoreMods);
+        return Collections.emptyList();
     }
 
     @Override
