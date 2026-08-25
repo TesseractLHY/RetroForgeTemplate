@@ -1,0 +1,32 @@
+# Gradle
+.gradle/
+build/
+**/build/
+
+# RetroFuturaGradle run directories (per module)
+run/
+*/run/
+*/run_*/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.eclipse/
+.settings/
+.classpath
+.project
+bin/
+out/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local overrides
+local.properties
+
+# Auto-generated daemon JVM pin (can select a JDK too old to load RetroFuturaGradle)
+gradle/gradle-daemon-jvm.properties

@@ -1,0 +1,49 @@
+plugins {
+    id 'com.gtnewhorizons.retrofuturagradle' version '2.0.3'
+}
+
+base {
+    archivesName = "${project.findProperty('mod_id')}-mc1.12.2"
+}
+
+// --- Minecraft 1.12.2 (net.minecraftforge.fml, Forge 14.23.x) ----------------
+minecraft {
+    mcVersion.set('1.12.2')
+
+    // 1.12.2 needs explicit MCP mappings (unlike 1.7.10).
+    mcpMappingChannel.set('stable')
+    mcpMappingVersion.set('39')
+
+    username.set('Developer')
+
+    extraRunJvmArguments.add('-ea:' + project.group)
+}
+
+dependencies {
+    // Version-agnostic shared code.
+    implementation project(':core')
+}
+
+// Make sure :core is configured before we read its outputs below.
+evaluationDependsOn(':core')
+
+// Embed the compiled core classes into the mod jar so the shipped mod is
+// self-contained.
+jar {
+    from { project(':core').sourceSets.main.output }
+}
+
+// Fill mcmod.info / pack.mcmeta placeholders from gradle.properties.
+processResources {
+    def tokens = [
+            mod_id         : project.findProperty('mod_id'),
+            mod_name       : project.findProperty('mod_name'),
+            mod_version    : project.version.toString(),
+            mod_description: project.findProperty('mod_description'),
+            mod_authors    : project.findProperty('mod_authors')
+    ]
+    inputs.properties(tokens)
+    filesMatching(['mcmod.info', 'pack.mcmeta']) {
+        expand(tokens)
+    }
+}

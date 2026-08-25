@@ -1,0 +1,5 @@
+// The core module holds version-agnostic code shared by every Minecraft
+// version. It must NOT reference any Minecraft / Forge class, because those
+// APIs differ between 1.7.10 and 1.12.2. Anything version-specific is reached
+// through the IPlatform abstraction, implemented in each version module.
+apply plugin: 'java-library'

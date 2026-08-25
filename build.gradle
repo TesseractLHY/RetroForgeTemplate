@@ -1,0 +1,29 @@
+// Root build script.
+// The root project itself produces no artifact; it only shares common
+// configuration with the three subprojects (:core, :1710, :1122).
+
+allprojects {
+    group = project.findProperty('root_package') ?: 'com.example.retroforge'
+    version = project.findProperty('mod_version') ?: '1.0.0'
+}
+
+subprojects {
+    apply plugin: 'java'
+
+    // Both Minecraft versions target Java 8. Azul covers the most platforms
+    // for Java 8 toolchains (crucially including macOS arm64).
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(8))
+            vendor.set(JvmVendorSpec.AZUL)
+        }
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+    }
+
+    repositories {
+        mavenCentral()
+    }
+}
