@@ -2,8 +2,12 @@ plugins {
     id 'com.gtnewhorizons.retrofuturagradle' version '2.0.3'
 }
 
+def modId = project.findProperty('mod_id') ?: 'retroforge'
+def mixinConfig = "mixins.${modId}.json"
+def mixinRefMap = "mixins.${modId}.refmap.json"
+
 base {
-    archivesName = "${project.findProperty('mod_id')}-mc1.12.2"
+    archivesName = "${modId}-mc1.12.2"
 }
 
 // --- Minecraft 1.12.2 (net.minecraftforge.fml, Forge 14.23.x) ----------------
@@ -16,12 +20,33 @@ minecraft {
 
     username.set('Developer')
 
-    extraRunJvmArguments.add('-ea:' + project.group)
+    extraRunJvmArguments.addAll([
+            '-ea:' + project.group,
+            // Handy while developing mixins; safe to remove.
+            '-Dmixin.debug.export=true'
+    ])
+}
+
+repositories {
+    // MixinBooter (zone.rong:mixinbooter) lives here.
+    maven {
+        name 'CleanroomMC Maven'
+        url 'https://maven.cleanroommc.com'
+    }
 }
 
 dependencies {
     // Version-agnostic shared code.
     implementation project(':core')
+
+    // Mixin via MixinBooter. enableMixins() only wires refmap generation +
+    // reobfuscation; the dependency itself is declared here. MixinBooter
+    // bundles the SpongePowered Mixin library and its annotation processor.
+    String mixin = modUtils.enableMixins('zone.rong:mixinbooter:11.13', mixinRefMap)
+    implementation(mixin) {
+        transitive = false
+    }
+    annotationProcessor mixin
 }
 
 // Make sure :core is configured before we read its outputs below.
@@ -31,12 +56,17 @@ evaluationDependsOn(':core')
 // self-contained.
 jar {
     from { project(':core').sourceSets.main.output }
+
+    // MixinBooter reads this manifest attribute to discover the mixin config.
+    manifest {
+        attributes 'MixinConfigs': mixinConfig
+    }
 }
 
 // Fill mcmod.info / pack.mcmeta placeholders from gradle.properties.
 processResources {
     def tokens = [
-            mod_id         : project.findProperty('mod_id'),
+            mod_id         : modId,
             mod_name       : project.findProperty('mod_name'),
             mod_version    : project.version.toString(),
             mod_description: project.findProperty('mod_description'),

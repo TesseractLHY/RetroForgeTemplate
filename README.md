@@ -6,8 +6,8 @@ A multi-module Minecraft Forge mod template that targets **both 1.7.10 and
 ```
 RetroForgeTemplate/
 ├── core/     version-agnostic shared code (pure Java, no Minecraft references)
-├── 1710/     Minecraft 1.7.10 module  (cpw.mods.fml,  Forge 10.13.x)
-└── 1122/     Minecraft 1.12.2 module  (net.minecraftforge.fml, Forge 14.23.x)
+├── 1710/     Minecraft 1.7.10 module  (cpw.mods.fml,  Forge 10.13.x, UniMixins)
+└── 1122/     Minecraft 1.12.2 module  (net.minecraftforge.fml, Forge 14.23.x, MixinBooter)
 ```
 
 Both version modules apply [RetroFuturaGradle](https://github.com/GTNewHorizons/RetroFuturaGradle)
@@ -64,6 +64,41 @@ compile-time constants). **Keep `Constants.java` in sync with
 
 To rebrand the template, rename the `com.example.retroforge` package in all
 three modules and update `root_package` in `gradle.properties`.
+
+## Mixins
+
+Both modules are wired for [Mixin](https://github.com/SpongePowered/Mixin),
+each using its version's standard loader:
+
+- **1710 → [UniMixins](https://github.com/LegacyModdingMC/UniMixins)**
+  (`io.github.legacymoddingmc:unimixins`). 1.7.10 has **no** automatic
+  `mixins.*.json` discovery, so a coremod (`core/RetroForgeCore`, implementing
+  gtnhmixins' `IEarlyMixinLoader`) registers the config and hands the loader the
+  mixin list from the `core/Mixins` builder. The coremod is loaded in **dev** via
+  `-Dfml.coreMods.load=…` (build.gradle) and in **production** via the
+  `FMLCorePlugin` jar manifest attribute.
+- **1122 → [MixinBooter](https://github.com/CleanroomMC/MixinBooter)**
+  (`zone.rong:mixinbooter`). The config is declared through the jar manifest
+  attribute `MixinConfigs`.
+
+RetroFuturaGradle's `modUtils.enableMixins(...)` handles refmap generation and
+reobfuscation for both.
+
+Each module ships a sample `mixin/MixinMinecraft.java` that logs a line from the
+`Minecraft` constructor — run a client and look for `MixinMinecraft applied on ...`
+to confirm mixins load. To add your own:
+
+- **1122:** put the mixin under `mc1122/.../mixin/` and list its simple name in
+  the `client` / `server` / `mixins` arrays of `mixins.retroforge.json`.
+- **1710:** put the mixin under `mc1710/.../mixin/`, then add it to a `Mixins`
+  builder entry (`addClientMixins` / `addServerMixins` / `addCommonMixins`). The
+  `client` / `server` / `mixins` arrays in the json stay empty — the builder is
+  authoritative.
+
+The config filename, its `refmap` field, the 1710 `FMLCorePlugin` / 1122
+`MixinConfigs` manifest values are all derived from `mod_id`. If you change
+`mod_id`, rename the `mixins.<id>.json` files and update the `package` / `refmap`
+fields inside them.
 
 ## Requirements / gotchas
 

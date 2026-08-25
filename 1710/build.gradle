@@ -2,8 +2,13 @@ plugins {
     id 'com.gtnewhorizons.retrofuturagradle' version '2.0.3'
 }
 
+def modId = project.findProperty('mod_id') ?: 'retroforge'
+def mixinRefMap = "mixins.${modId}.refmap.json"
+// Coremod that registers the mixin config (see RetroForgeCore).
+def coremodClass = 'com.example.retroforge.mc1710.core.RetroForgeCore'
+
 base {
-    archivesName = "${project.findProperty('mod_id')}-mc1.7.10"
+    archivesName = "${modId}-mc1.7.10"
 }
 
 // --- Minecraft 1.7.10 (cpw.mods.fml, Forge 10.13.x) --------------------------
@@ -13,13 +18,43 @@ minecraft {
     mcVersion.set('1.7.10')
     username.set('Developer')
 
-    // Assertions for our own classes during dev runs.
-    extraRunJvmArguments.add('-ea:' + project.group)
+    extraRunJvmArguments.addAll([
+            '-ea:' + project.group,
+    ])
+}
+
+repositories {
+    // UniMixins (io.github.legacymoddingmc:unimixins) lives here.
+    maven {
+        name 'GTNH Maven'
+        url 'https://nexus.gtnewhorizons.com/repository/public/'
+    }
 }
 
 dependencies {
     // Version-agnostic shared code.
     implementation project(':core')
+
+    // Mixin via UniMixins (the standard loader for 1.7.10). This mirrors what
+    // GTNH's convention plugin sets up under the hood on raw RetroFuturaGradle:
+    // the mixin annotation processor needs asm/guava/gson plus the UniMixins
+    // ":dev" jar (which bundles the SpongePowered Mixin AP).
+    String unimixins = 'io.github.legacymoddingmc:unimixins:0.3.1:dev'
+    annotationProcessor 'org.ow2.asm:asm-debug-all:5.0.4'
+    annotationProcessor 'com.google.guava:guava:24.1.1-jre'
+    annotationProcessor 'com.google.code.gson:gson:2.13.2'
+    annotationProcessor unimixins
+    // enableMixins() wires refmap generation + reobfuscation. The config itself
+    // is registered at runtime by our coremod (RetroForgeCore/Mixins), not by a
+    // classpath scan — 1.7.10 has no automatic mixins.*.json discovery.
+    implementation(modUtils.enableMixins(unimixins, mixinRefMap)) {
+        transitive = false
+    }
+}
+
+// Mixin AP on 1.7.10 touches sun.* APIs; these keep javac from rejecting it.
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += ['-XDenableSunApiLintControl', '-XDignore.symbol.file']
 }
 
 // Make sure :core is configured before we read its outputs below.
@@ -30,12 +65,21 @@ evaluationDependsOn(':core')
 // these classes untouched.
 jar {
     from { project(':core').sourceSets.main.output }
+
+    // Production loads the coremod (and thus the mixin config) via this manifest.
+    // ContainsFMLMod tells FML the same jar also has an @Mod to scan.
+    manifest {
+        attributes(
+                'FMLCorePlugin': coremodClass,
+                'FMLCorePluginContainsFMLMod': 'true'
+        )
+    }
 }
 
 // Fill mcmod.info placeholders from gradle.properties.
 processResources {
     def tokens = [
-            mod_id         : project.findProperty('mod_id'),
+            mod_id         : modId,
             mod_name       : project.findProperty('mod_name'),
             mod_version    : project.version.toString(),
             mod_description: project.findProperty('mod_description'),
